@@ -1,51 +1,58 @@
+using System.Collections.Specialized;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 
 public class Draggable : MonoBehaviour
 {
-    public UnityEvent OnGrabbed;
-    public UnityEvent OnContextAction;
-    public UnityEvent OnReleased;
-    private Vector3 mousePositionOffset;
 
+    [HideInInspector] public UnityEvent onGrabbed;
+    [HideInInspector] public UnityEvent<List<Vector3>> onContextAction;
+    [HideInInspector] public UnityEvent onReleased;
+    private Vector3 _mousePositionOffset;
+    private List<Vector3> _hoveredBuffer;
 
+    void Awake()
+    {
+        _hoveredBuffer = new List<Vector3>();
+    }
 
     void OnMouseOver() 
     {
-        if(Input.GetKey(KeyCode.Mouse1))
-        {
-             OnContextAction.Invoke();
-        }
+        if(Input.GetKey(KeyCode.Mouse1) == false)
+            return;
+
+        _hoveredBuffer.Add(GetMouseWorldPosition());
+        onContextAction.Invoke(_hoveredBuffer);
+        
     }
     void OnMouseDrag()
     {
-        Vector3 newPosition =  GetMouseWorldPosition() + mousePositionOffset;
+        Vector3 newPosition =  GetMouseWorldPosition() + _mousePositionOffset;
         //Debug.Log(GetMouseWorldPosition());
 
-        Vector3 clampedPosition = new Vector3(newPosition.x, transform.position.y,newPosition.z);
-        transform.position = clampedPosition;
-
-
-
+        Transform myTransform = transform;
+        Vector3 clampedPosition = new Vector3(newPosition.x, myTransform.position.y,newPosition.z);
+        myTransform.position = clampedPosition;
+        
+        GetComponent<Particle>().OnPositionUpdated();
     }
     void OnMouseDown()
     {        
         Vector3 position = gameObject.transform.position - GetMouseWorldPosition();
         Vector3 clampedPosition = new Vector3(position.x,0,position.z);
-        mousePositionOffset = clampedPosition;
-        OnGrabbed.Invoke();
+        _mousePositionOffset = clampedPosition;
+        onGrabbed.Invoke();
     
     }   
-
     
-
-
     void OnMouseUp()
     {
-        OnReleased.Invoke();
+        onReleased.Invoke();
+        _hoveredBuffer.Clear();
     }
 
     private Vector3 GetMouseWorldPosition()

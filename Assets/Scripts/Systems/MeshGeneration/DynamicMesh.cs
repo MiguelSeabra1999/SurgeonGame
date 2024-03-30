@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -50,8 +49,11 @@ public abstract class DynamicMesh : MonoBehaviour
 
     public virtual Vector3[] GetAttachPoints()
     {
+        
         return verticesArr;
     }
+
+
 
     protected void AddTriangle(int a, int b, int c)
     {
@@ -93,7 +95,7 @@ public abstract class DynamicMesh : MonoBehaviour
         mesh.Clear();
     }
 
-    Vector2Int GetVertexGridCoordinates(int vertexIndex)
+    public Vector2Int GetVertexGridCoordinates(int vertexIndex)
     {
         int x = vertexIndex % resolution.x;
         int y = (vertexIndex / resolution.x) % resolution.y;
@@ -117,14 +119,33 @@ public abstract class DynamicMesh : MonoBehaviour
         Debug.LogError("Invalid Triangle");
         return 0;
     }
-
-    public void CutVertexVertical(int inVertexIndex)
+    
+    int GetTriangleVerticalDirectionInRelationToPoint(int vertexIndex,  Vector3Int triangleVertexIndexes)
     {
+        Vector2Int coordinatesX = GetVertexGridCoordinates(triangleVertexIndexes.x);
+        Vector2Int coordinatesY = GetVertexGridCoordinates(triangleVertexIndexes.y);
+        Vector2Int coordinatesZ = GetVertexGridCoordinates(triangleVertexIndexes.z);
+
+        Vector2Int coordinatesVertex = GetVertexGridCoordinates(vertexIndex);
+
+        if(coordinatesX.y < coordinatesVertex.y || coordinatesY.y < coordinatesVertex.y || coordinatesZ.y < coordinatesVertex.y)
+            return -1;
+        if(coordinatesX.y > coordinatesVertex.y || coordinatesY.y > coordinatesVertex.y || coordinatesZ.y > coordinatesVertex.y)
+            return 1;
+
+        Debug.LogError("Invalid Triangle");
+        return 0;
+    }
+
+    public Tuple<int,List<int>> CutVertexVertical(int inVertexIndex)
+    {
+        int replacementVertexIndex = inVertexIndex + coreSize;
+        Tuple<int,List<int>> cutConnections = new(replacementVertexIndex, new List<int>());
         if(inVertexIndex > coreSize)
         {
               //TODO Handle this case
             Debug.Log("Recutting Point");
-            return;
+            return cutConnections;
         }
 
         for(int i = 0; i < trianglesArr.Length; i+=3)
@@ -143,14 +164,52 @@ public abstract class DynamicMesh : MonoBehaviour
                 {
                     trianglesArr[i + j] = inVertexIndex + coreSize;
                 }
+                else if(cutConnections.Item2.Contains(trianglesArr[i + j]) == false)
+                {
+                    cutConnections.Item2.Add(trianglesArr[i + j]);
+                }
             }
         }
 
         UpdateTriangles();
+        return cutConnections;
     }
-    public void CutVertexHorizontal(int index)
+    public Tuple<int,List<int>> CutVertexHorizontal(int inVertexIndex)
     {
-        //TODO implement
+        Tuple<int,List<int>> cutConnections = new(inVertexIndex + coreSize, new List<int>());
+        
+        if(inVertexIndex > coreSize)
+        {
+            //TODO Handle this case
+            Debug.Log("Recutting Point");
+            return cutConnections;
+        }
+
+        for(int i = 0; i < trianglesArr.Length; i+=3)
+        {
+            Vector3Int triangle = new(trianglesArr[i], trianglesArr[i+1], trianglesArr[i+2]);
+            if(triangle.x != inVertexIndex && triangle.y != inVertexIndex && triangle.z != inVertexIndex)
+                continue;
+
+            int direction = GetTriangleVerticalDirectionInRelationToPoint(inVertexIndex, triangle);
+            if(direction < 1)
+                continue;
+
+            for(int j = 0; j < 3; j++)
+            {
+                if(trianglesArr[i + j] == inVertexIndex)
+                {
+                    trianglesArr[i + j] = inVertexIndex + coreSize;
+                }
+                else if(cutConnections.Item2.Contains(trianglesArr[i + j]) == false)
+                {
+                        cutConnections.Item2.Add(trianglesArr[i + j]);
+                }
+            }
+        }
+
+        UpdateTriangles();
+        return cutConnections;
     }
 
 }

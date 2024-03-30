@@ -10,7 +10,7 @@ public class SkinMesh : DynamicMesh
     public float length = 10;
     public float width = 2;
 
-    private int halfCoreSize;
+    private int _halfCoreSize;
 
 
     void Start()
@@ -22,18 +22,20 @@ public class SkinMesh : DynamicMesh
 
     public override Vector3[] GetAttachPoints()
     {
-        List<Vector3> Result = new List<Vector3>();
+        List<Vector3> result = new List<Vector3>();
         //dived by for because we have vertexes for the bottom facing and top facing + a copy of every vertex for cutting
         for(int i = 0; i < verticesArr.Length/4; i++)
         {
-            Result.Add(verticesArr[i]);
+            result.Add(verticesArr[i]);
         }
-        return Result.ToArray();
+        return result.ToArray();
     }
-    public override void UpdateVertexPosition(int Index, Vector3 Position)
+    
+
+    public override void UpdateVertexPosition(int index, Vector3 position)
     {
-        verticesArr[Index] = Position;
-        verticesArr[Index + halfCoreSize] = Position;
+        verticesArr[index] = position;
+        verticesArr[index + _halfCoreSize] = position;
     }
 
     [ContextMenu("Generate plane mesh")]
@@ -50,8 +52,8 @@ public class SkinMesh : DynamicMesh
         triangles.Clear();
         uvs.Clear();
         
-        float x_step = width/resolution.x;
-        float y_step = length/resolution.y;
+        float xStep = width/resolution.x;
+        float yStep = length/resolution.y;
         int index = 0;
 
 
@@ -59,7 +61,7 @@ public class SkinMesh : DynamicMesh
         {
             for(int x = 0; x < resolution.x; x++)
             {
-                vertices.Add(new Vector3(x*x_step,y*y_step,0));
+                vertices.Add(new Vector3(x*xStep,y*yStep,0));
                 Vector2 uv = new Vector2((float)x/(resolution.x-1), (float)y/(resolution.y-1));
                 uvs.Add(uv);
 
@@ -84,7 +86,7 @@ public class SkinMesh : DynamicMesh
         {
             for(int x = 0; x < resolution.x; x++)
             {
-                vertices.Add(new Vector3(x*x_step,y*y_step,0));
+                vertices.Add(new Vector3(x*xStep,y*yStep,0));
                 Vector2 uv = new Vector2((float)x/(resolution.x-1), (float)y/(resolution.y-1));
                 uvs.Add(uv);
 
@@ -105,7 +107,7 @@ public class SkinMesh : DynamicMesh
         }
 
         coreSize = vertices.Count;
-        halfCoreSize = coreSize/2;
+        _halfCoreSize = coreSize/2;
 
         //creating a backup of every vertex to reattach triangle to on cutting
         for(int i = 0; i < coreSize; ++i)

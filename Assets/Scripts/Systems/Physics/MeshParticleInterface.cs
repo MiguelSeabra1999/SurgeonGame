@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -38,9 +39,22 @@ public class MeshParticleInterface : MonoBehaviour
 
     public void CutParticleVertical(Particle particle)
     {
-        mesh.CutVertexVertical(particle.meshIndex);
+        Tuple<int, List<int>> cutConnections = mesh.CutVertexVertical(particle.meshIndex);
+        int replacementVertexIndex = cutConnections.Item1;
+        
+        Particle newParticle = CreateNewParticle(mesh.verticesArr[replacementVertexIndex], replacementVertexIndex, mesh.GetVertexGridCoordinates(particle.meshIndex));
+        GameManager.Instance.physicsSimulator.CutParticleVertical(particle,newParticle);
+    }    
+    public void CutParticleHorizontal(Particle particle)
+    {
+        Tuple<int, List<int>> cutConnections = mesh.CutVertexHorizontal(particle.meshIndex);
+        int replacementVertexIndex = cutConnections.Item1;
+        
+        Particle newParticle = CreateNewParticle(mesh.verticesArr[replacementVertexIndex], replacementVertexIndex, mesh.GetVertexGridCoordinates(particle.meshIndex));
+        GameManager.Instance.physicsSimulator.CutParticleHorizontal(particle,newParticle);
         
     }
+
 
     public void SnapMeshIntoParticlePositions()
     {
@@ -79,16 +93,23 @@ public class MeshParticleInterface : MonoBehaviour
         Vector3[] attachPoints = mesh.GetAttachPoints();
         for(int i = 0; i < attachPoints.Length; ++i)
         {
-            Vector3 WorldPosition = mesh.transform.TransformPoint(attachPoints[i]);
-            GameObject newObject = Instantiate(particleObject, WorldPosition, Quaternion.identity);
-            newObject.transform.parent = transform;
-
-            Particle newParticle = newObject.GetComponent<Particle>();
-            
-            newParticle.Init(this, i);
-            particles.Add(newParticle);
-            GameManager.Instance.physicsSimulator.AddParticle(newParticle);
+            CreateNewParticle(attachPoints[i], i, mesh.GetVertexGridCoordinates(i));
         }
+    }
+
+    private Particle CreateNewParticle(Vector3 attachPoint, int vertexIndex, Vector2Int meshCoords)
+    {
+        Vector3 worldPosition = mesh.transform.TransformPoint(attachPoint);
+        GameObject newObject = Instantiate(particleObject, worldPosition, Quaternion.identity);
+        newObject.transform.parent = transform;
+
+        Particle newParticle = newObject.GetComponent<Particle>();
+            
+        newParticle.Init(this, vertexIndex, meshCoords);
+        particles.Add(newParticle);
+        GameManager.Instance.physicsSimulator.AddParticle(newParticle);
+
+        return newParticle;
     }
 
     void MakeDistanceConstraints()

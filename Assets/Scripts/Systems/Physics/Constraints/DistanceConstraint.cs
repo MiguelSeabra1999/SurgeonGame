@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.PackageManager;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public struct DistanceConstraint 
 {
@@ -70,6 +72,11 @@ public struct DistanceConstraint
         float error = distance - targetDistance;
         return direction * error;
     }
+    
+    public bool ContainsParticle(int meshIndex)
+    {
+        return particleA.meshIndex == meshIndex || particleB.meshIndex == meshIndex;
+    }
 
     public void DebugDraw()
     {
@@ -78,4 +85,22 @@ public struct DistanceConstraint
         UnityEngine.Debug.DrawLine(particleA.gameObject.transform.position + Vector3.up*0.5f,  particleB.gameObject.transform.position + Vector3.up*0.5f, color,  0.0f,  true);
     }
 
+    public Particle GetOtherParticle(Particle particle)
+    {
+        if(particleA == particle)
+            return particleB;
+        if(particleB == particle)
+            return particleA;
+        
+        Debug.LogError("Missing particle");
+        return null;
+    }
+    
+    public void ReplaceParticle(Particle particle, Particle replacement)
+    {
+        if(particleA == particle)
+            particleA = replacement;
+        else if(particleB == particle)
+            particleB = replacement;
+    }
 }

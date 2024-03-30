@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: -7629050833202000772}
   - component: {fileID: 8640274077434206664}
   - component: {fileID: 2019106788708230981}
+  - component: {fileID: -3239970149221126629}
   m_Layer: 0
   m_Name: Particle
   m_TagString: Untagged
@@ -49,8 +50,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   heighDisplacementWhenGrabbed: 0.1
+  minDragDistanceToCut: 0.1
   meshIndex: -1
+  meshCoords: {x: 0, y: 0}
   isLocked: 0
+  bWasCut: 0
+  onCut:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!23 &-3910351868916621165
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -134,12 +141,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed9817f583c21f24dbdf9065b1816867, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  OnGrabbed:
+  onGrabbed:
     m_PersistentCalls:
       m_Calls: []
-  OnContextAction:
+  onContextAction:
     m_PersistentCalls:
       m_Calls: []
-  OnReleased:
+  onReleased:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-3239970149221126629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7804076797825825172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58397cb0bb2996742a040402ce30d494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cutVFX: {fileID: 767953281711554540, guid: f55eb0da883eb7542b551c7ace56400d, type: 3}
+  offset: {x: 0, y: 0.2, z: 0}
