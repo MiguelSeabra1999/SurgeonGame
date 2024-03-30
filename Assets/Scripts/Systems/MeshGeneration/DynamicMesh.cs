@@ -23,6 +23,7 @@ public abstract class DynamicMesh : MonoBehaviour
 
     public Vector2Int resolution = new Vector2Int(100,500);
     protected int coreSize = 0; 
+    protected int halfCoreSize;
 
 
     void Awake()
@@ -139,45 +140,20 @@ public abstract class DynamicMesh : MonoBehaviour
 
     public Tuple<int,List<int>> CutVertexVertical(int inVertexIndex)
     {
-        int replacementVertexIndex = inVertexIndex + coreSize;
-        Tuple<int,List<int>> cutConnections = new(replacementVertexIndex, new List<int>());
-        if(inVertexIndex > coreSize)
-        {
-              //TODO Handle this case
-            Debug.Log("Recutting Point");
-            return cutConnections;
-        }
-
-        for(int i = 0; i < trianglesArr.Length; i+=3)
-        {
-            Vector3Int triangle = new(trianglesArr[i], trianglesArr[i+1], trianglesArr[i+2]);
-            if(triangle.x != inVertexIndex && triangle.y != inVertexIndex && triangle.z != inVertexIndex)
-                continue;
-
-            int direction = GetTriangleHorizontalDirectionInRelationToPoint(inVertexIndex, triangle);
-            if(direction < 1)
-                continue;
-
-            for(int j = 0; j < 3; j++)
-            {
-                if(trianglesArr[i + j] == inVertexIndex)
-                {
-                    trianglesArr[i + j] = inVertexIndex + coreSize;
-                }
-                else if(cutConnections.Item2.Contains(trianglesArr[i + j]) == false)
-                {
-                    cutConnections.Item2.Add(trianglesArr[i + j]);
-                }
-            }
-        }
-
-        UpdateTriangles();
-        return cutConnections;
+        CutVertex(inVertexIndex + halfCoreSize, true);
+        return CutVertex(inVertexIndex, true);
     }
+    
     public Tuple<int,List<int>> CutVertexHorizontal(int inVertexIndex)
     {
-        Tuple<int,List<int>> cutConnections = new(inVertexIndex + coreSize, new List<int>());
-        
+        CutVertex(inVertexIndex + halfCoreSize, false);
+        return CutVertex(inVertexIndex, false);
+    }
+
+    private Tuple<int,List<int>> CutVertex(int inVertexIndex, bool bIsVertical)
+    {
+        int replacementVertexIndex = inVertexIndex + coreSize;
+        Tuple<int,List<int>> cutConnections = new(replacementVertexIndex, new List<int>());
         if(inVertexIndex > coreSize)
         {
             //TODO Handle this case
@@ -188,10 +164,19 @@ public abstract class DynamicMesh : MonoBehaviour
         for(int i = 0; i < trianglesArr.Length; i+=3)
         {
             Vector3Int triangle = new(trianglesArr[i], trianglesArr[i+1], trianglesArr[i+2]);
-            if(triangle.x != inVertexIndex && triangle.y != inVertexIndex && triangle.z != inVertexIndex)
+            bool bTriangleContainsVertex = triangle.x == inVertexIndex || triangle.y == inVertexIndex || triangle.z == inVertexIndex;
+            if(bTriangleContainsVertex == false )
                 continue;
 
-            int direction = GetTriangleVerticalDirectionInRelationToPoint(inVertexIndex, triangle);
+            int direction = 0;
+            if (bIsVertical)
+            {
+                direction = GetTriangleHorizontalDirectionInRelationToPoint(inVertexIndex, triangle);
+            }
+            else
+            {
+                direction = GetTriangleVerticalDirectionInRelationToPoint(inVertexIndex, triangle);
+            }
             if(direction < 1)
                 continue;
 
@@ -200,10 +185,11 @@ public abstract class DynamicMesh : MonoBehaviour
                 if(trianglesArr[i + j] == inVertexIndex)
                 {
                     trianglesArr[i + j] = inVertexIndex + coreSize;
+                   
                 }
                 else if(cutConnections.Item2.Contains(trianglesArr[i + j]) == false)
                 {
-                        cutConnections.Item2.Add(trianglesArr[i + j]);
+                    cutConnections.Item2.Add(trianglesArr[i + j]);
                 }
             }
         }

@@ -10,7 +10,6 @@ public class SkinMesh : DynamicMesh
     public float length = 10;
     public float width = 2;
 
-    private int _halfCoreSize;
 
 
     void Start()
@@ -35,7 +34,7 @@ public class SkinMesh : DynamicMesh
     public override void UpdateVertexPosition(int index, Vector3 position)
     {
         verticesArr[index] = position;
-        verticesArr[index + _halfCoreSize] = position;
+        verticesArr[index + halfCoreSize] = position;
     }
 
     [ContextMenu("Generate plane mesh")]
@@ -107,7 +106,7 @@ public class SkinMesh : DynamicMesh
         }
 
         coreSize = vertices.Count;
-        _halfCoreSize = coreSize/2;
+        halfCoreSize = coreSize/2;
 
         //creating a backup of every vertex to reattach triangle to on cutting
         for(int i = 0; i < coreSize; ++i)

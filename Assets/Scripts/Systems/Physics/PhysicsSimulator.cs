@@ -7,6 +7,7 @@ using UnityEngine;
 public class PhysicsSimulator : MonoBehaviour
 {
     public bool updatePhysics = false;
+    public bool drawConstraints = true;
     public float cachedErrorSum = 0;
     private List<Particle> _particles;
     private Dictionary<Vector2Int, Particle> _particlesGrid;
@@ -30,9 +31,14 @@ public class PhysicsSimulator : MonoBehaviour
         {
             cachedErrorSum = SolveConstraints();
         }
-        foreach (DistanceConstraint distanceConstraint in _distanceConstraints)
+
+        if (drawConstraints)
         {
-            distanceConstraint.DebugDraw();
+            foreach (DistanceConstraint distanceConstraint in _distanceConstraints)
+            {
+                distanceConstraint.DebugDraw();
+            }
+            
         }
     }
 
