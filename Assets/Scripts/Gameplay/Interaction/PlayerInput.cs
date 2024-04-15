@@ -64,9 +64,7 @@ namespace Gameplay.Interaction
             {
                 if (_hitResult.bHit == false)
                     return;
-                MouseOver();
-                Debug.Log("Mouse Over");
-
+                ContextAction();
             }
 
             if (Input.GetKey(KeyCode.Mouse0))
@@ -80,7 +78,6 @@ namespace Gameplay.Interaction
                 }
                 else
                 {
-                    Debug.Log("Mouse Drag");
                     MouseDrag(ray);
                 }
             }
@@ -91,7 +88,7 @@ namespace Gameplay.Interaction
             }
         }
 
-        void MouseOver() 
+        void ContextAction() 
         {
             
             _hoveredBuffer.Add(_hitResult.hitPoint);
