@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Systems.Physics;
 using UnityEngine;
 
 [RequireComponent(typeof(DynamicMesh))]
@@ -37,30 +38,31 @@ public class MeshParticleInterface : MonoBehaviour
         bHaveParticlesMoved = true;
     }
 
-    public void CutParticleVertical(Particle particle)
+    public Particle CutParticleVertical(Particle particle)
     {
         Tuple<int, List<int>> cutConnections = mesh.CutVertexVertical(particle.meshIndex);
         int replacementVertexIndex = cutConnections.Item1;
         
         Particle newParticle = CreateNewParticle(mesh.verticesArr[replacementVertexIndex], replacementVertexIndex, mesh.GetVertexGridCoordinates(particle.meshIndex));
-        GameManager.Instance.physicsSimulator.CutParticleVertical(particle,newParticle);
+        return newParticle;
     }    
-    public void CutParticleHorizontal(Particle particle)
+    public Particle CutParticleHorizontal(Particle particle)
     {
         Tuple<int, List<int>> cutConnections = mesh.CutVertexHorizontal(particle.meshIndex);
         int replacementVertexIndex = cutConnections.Item1;
-        
         Particle newParticle = CreateNewParticle(mesh.verticesArr[replacementVertexIndex], replacementVertexIndex, mesh.GetVertexGridCoordinates(particle.meshIndex));
-        GameManager.Instance.physicsSimulator.CutParticleHorizontal(particle,newParticle);
-        
+        return newParticle;
     }
 
 
     public void SnapMeshIntoParticlePositions()
     {
+        PhysicsSimulator physicsSimulator = GameManager.Instance.physicsSimulator;
         foreach(Particle particle in particles)
         {
-            mesh.UpdateVertexPosition(particle.meshIndex, particle.transform.localPosition);
+            Vector3 particleWorldPos = physicsSimulator.GetParticle(particle.meshIndex).position;
+            Vector3 localPos = mesh.transform.InverseTransformPoint(particleWorldPos);
+            mesh.UpdateVertexPosition(particle.meshIndex, localPos);
         }
         mesh.UpdateVertexes();
     }
@@ -69,23 +71,12 @@ public class MeshParticleInterface : MonoBehaviour
     protected void AttachToMesh()
     {
         particles = new List<Particle>();
-        Clear();
-
+        
         if(mesh == null)
             mesh = GetComponent<DynamicMesh>();
-
-
+        
         CreateParticles();
         MakeDistanceConstraints();
-    }
-
-    [ContextMenu("Clear")]
-    protected void Clear()
-    {
-        for(int i = 0; i < particles.Count; ++i)
-        {
-            DestroyImmediate(particles[i].gameObject);
-        }
     }
 
     void CreateParticles()
@@ -94,21 +85,16 @@ public class MeshParticleInterface : MonoBehaviour
         for(int i = 0; i < attachPoints.Length; ++i)
         {
             CreateNewParticle(attachPoints[i], i, mesh.GetVertexGridCoordinates(i));
+        
         }
     }
 
     private Particle CreateNewParticle(Vector3 attachPoint, int vertexIndex, Vector2Int meshCoords)
     {
         Vector3 worldPosition = mesh.transform.TransformPoint(attachPoint);
-        GameObject newObject = Instantiate(particleObject, worldPosition, Quaternion.identity);
-        newObject.transform.parent = transform;
-
-        Particle newParticle = newObject.GetComponent<Particle>();
-            
-        newParticle.Init(this, vertexIndex, meshCoords);
+        Particle newParticle = new Particle(worldPosition,vertexIndex, meshCoords);
         particles.Add(newParticle);
-        GameManager.Instance.physicsSimulator.AddParticle(newParticle);
-
+        GameManager.Instance.physicsSimulator.AddParticle(newParticle, this);
         return newParticle;
     }
 
@@ -141,7 +127,7 @@ public class MeshParticleInterface : MonoBehaviour
 
                 if(x == 0 || x == mesh.resolution.x - 1 || y == 0 || y == mesh.resolution.y - 1)
                 {
-                    particles[index].isLocked = true;
+                    GameManager.Instance.physicsSimulator.LockParticle(index);
                 }
 
                 index++;
@@ -151,7 +137,7 @@ public class MeshParticleInterface : MonoBehaviour
 
     void MakeDistanceConstraints(Particle mainParticle, Particle secondParticle)
     {
-        float distance = Vector3.Distance(mainParticle.gameObject.transform.position,secondParticle.gameObject.transform.position);
+        float distance = Vector3.Distance(mainParticle.position,secondParticle.position);
         DistanceConstraint distanceConstraint = new(mainParticle,secondParticle, distance);
         GameManager.Instance.physicsSimulator.AddDistanceConstraint(distanceConstraint);
     }

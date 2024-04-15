@@ -1,16 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
+using Systems.Physics;
 using UnityEngine;
 
-[RequireComponent(typeof(Particle))]
+[RequireComponent(typeof(PhysicsSimulator))]
 public class ParticleVFXHandler : MonoBehaviour
 {
     public GameObject cutVFX;
     public Vector3 offset;
     void Start()
     {
-        Particle particle = GetComponent<Particle>();
-        particle.onCut.AddListener(OnCut);
+        PhysicsSimulator physicsSimulator = GetComponent<PhysicsSimulator>();
+        physicsSimulator.onParticleCut.AddListener(OnCut);
     }
 
     private void OnCut(Vector3 cutOffset)

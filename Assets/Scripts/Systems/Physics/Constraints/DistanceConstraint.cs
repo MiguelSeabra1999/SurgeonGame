@@ -25,34 +25,23 @@ public struct DistanceConstraint
     {
         Vector3 error = GetError();
         if(error.magnitude == 0)
-        {
             return error;
-        }
-
-
+        
         Vector3 halfError = error * .5f;
-
         if(particleA.isLocked)
         {
-                particleB.gameObject.transform.position += -1*error;
-                particleB.OnPositionUpdated();
-                return error;
+            particleB.position += -1*error;
+            return error;
         }
         if(particleB.isLocked)
         {
-                particleA.gameObject.transform.position += error;
-                particleA.OnPositionUpdated();
-                return error;
+            particleA.position += error;
+            return error;
         }
 
-        particleA.gameObject.transform.position +=  halfError;
-        particleB.gameObject.transform.position += -1 * halfError;
-        
-        particleA.OnPositionUpdated();
-        particleB.OnPositionUpdated();
-
+        particleA.position +=  halfError;
+        particleB.position += -1 * halfError;
          return error;
-    
     }
 
     public Vector3 GetError()
@@ -60,8 +49,8 @@ public struct DistanceConstraint
         if(particleA.isLocked && particleB.isLocked)
             return Vector3.zero;
 
-        Vector3 positionA = particleA.gameObject.transform.position;
-        Vector3 positionB = particleB.gameObject.transform.position;
+        Vector3 positionA = particleA.position;
+        Vector3 positionB = particleB.position;
         float distance = Vector3.Distance(positionA,positionB);
         Vector3 offset = positionB - positionA;
         Vector3 direction = offset.normalized;
@@ -82,7 +71,7 @@ public struct DistanceConstraint
     {
 
         Color color = Color.Lerp(Color.white, Color.red, GetError().magnitude/1f); 
-        UnityEngine.Debug.DrawLine(particleA.gameObject.transform.position + Vector3.up*0.5f,  particleB.gameObject.transform.position + Vector3.up*0.5f, color,  0.0f,  true);
+        UnityEngine.Debug.DrawLine(particleA.position + Vector3.up*0.1f,  particleB.position + Vector3.up*0.1f, color,  0.0f,  true);
     }
 
     public Particle GetOtherParticle(Particle particle)
@@ -93,7 +82,7 @@ public struct DistanceConstraint
             return particleA;
         
         Debug.LogError("Missing particle");
-        return null;
+        return particle;
     }
     
     public void ReplaceParticle(Particle particle, Particle replacement)

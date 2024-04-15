@@ -42,9 +42,10 @@ public abstract class DynamicMesh : MonoBehaviour
         uvs.Clear();
     }
 
-    public virtual void UpdateVertexPosition(int Index, Vector3 Position)
+    public virtual void UpdateVertexPosition(int index, Vector3 position)
     {
-        vertices[Index] = Position;
+        
+        vertices[index] = position;
         UpdateMesh();
     }
 

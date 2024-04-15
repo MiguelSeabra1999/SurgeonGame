@@ -4022,7 +4022,7 @@ MonoBehaviour:
   OnMeshFinishedGenerating:
     m_PersistentCalls:
       m_Calls: []
-  resolution: {x: 20, y: 20}
+  resolution: {x: 30, y: 30}
   length: 10
   width: 10
 --- !u!23 &1308956588
@@ -4084,7 +4084,7 @@ Transform:
   m_GameObject: {fileID: 1308956584}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -4.27, y: -1.95, z: -6.72}
+  m_LocalPosition: {x: -4.27, y: -1.892, z: -6.72}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4334,6 +4334,8 @@ GameObject:
   - component: {fileID: 1820596231}
   - component: {fileID: 1820596230}
   - component: {fileID: 1820596229}
+  - component: {fileID: 1820596232}
+  - component: {fileID: 1820596233}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -4353,8 +4355,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f083808449b479d448cf76019c0aa454, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  particleRadius: 0.2
   updatePhysics: 1
+  drawConstraints: 1
+  drawParticles: 1
   cachedErrorSum: 0
+  particleHeightDisplacementWhenGrabbed: 1
+  minDragDistanceToCut: 0.1
+  onParticleCut:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1820596230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4368,6 +4378,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   physicsSimulator: {fileID: 0}
+  playerInput: {fileID: 0}
 --- !u!4 &1820596231
 Transform:
   m_ObjectHideFlags: 0
@@ -4383,6 +4394,41 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1820596232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820596228}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf11ac0024214ea28a6a409782f0076e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  onGrabbed:
+    m_PersistentCalls:
+      m_Calls: []
+  onContextAction:
+    m_PersistentCalls:
+      m_Calls: []
+  onReleased:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1820596233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820596228}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58397cb0bb2996742a040402ce30d494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cutVFX: {fileID: 767953281711554540, guid: f55eb0da883eb7542b551c7ace56400d, type: 3}
+  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &2035745035
 GameObject:
   m_ObjectHideFlags: 0

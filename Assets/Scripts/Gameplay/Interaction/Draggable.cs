@@ -5,11 +5,11 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
 
-
+//DEPRECATED
 public class Draggable : MonoBehaviour
 {
 
-    [HideInInspector] public UnityEvent onGrabbed;
+  /*  [HideInInspector] public UnityEvent onGrabbed;
     [HideInInspector] public UnityEvent<List<Vector3>> onContextAction;
     [HideInInspector] public UnityEvent onReleased;
     private Vector3 _mousePositionOffset;
@@ -64,5 +64,5 @@ public class Draggable : MonoBehaviour
             return hit.point;
         }
         return Vector3.zero;
-    }
+    }*/
 }
