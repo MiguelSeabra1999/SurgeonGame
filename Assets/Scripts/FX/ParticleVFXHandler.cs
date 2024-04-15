@@ -14,10 +14,10 @@ public class ParticleVFXHandler : MonoBehaviour
         physicsSimulator.onParticleCut.AddListener(OnCut);
     }
 
-    private void OnCut(Vector3 cutOffset)
+    private void OnCut(Particle particle, Vector3 cutOffset)
     {
         float angleEuler = Vector3.SignedAngle(Vector3.forward, cutOffset, Vector3.up);
         Quaternion Rotation = Quaternion.Euler(0,angleEuler, 0);
-        GameObject NewObject = Instantiate(cutVFX, transform.position + offset, Rotation);
+        GameObject NewObject = Instantiate(cutVFX, particle.position + offset, Rotation);
     }
 }

@@ -39,7 +39,7 @@ namespace Systems.Physics
         private Dictionary<Particle, MeshParticleInterface> _particlesToMeshInterface;
         private List<DistanceConstraint> _distanceConstraints;
         
-        [HideInInspector] public UnityEvent<Vector3> onParticleCut;
+        [HideInInspector] public UnityEvent<Particle, Vector3> onParticleCut;
 
         void Awake()
         {
@@ -103,6 +103,7 @@ namespace Systems.Physics
 
         public RayCastResult RayCast(Vector3 origin, Vector3 direction)
         {
+        
             direction = direction.normalized;
             float minDistance = float.MaxValue;
             int particleIndex = -1;
@@ -171,7 +172,7 @@ namespace Systems.Physics
                 return;
             Debug.DrawLine(lastPosition, lastPosition - movement, Color.red, 5f);
         
-            onParticleCut.Invoke(movement);
+            onParticleCut.Invoke(particle,movement);
         
             float angleWithForward =  Vector3.Angle(Vector3.forward, movement);        
             float angleWithBack = Vector3.Angle(Vector3.back, movement);
