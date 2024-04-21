@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Libraries;
 using Systems.Physics;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ using UnityEngine;
 public class MeshParticleInterface : MonoBehaviour
 {
 
-    public GameObject particleObject;
+
 
     private List<Particle> particles;
     private DynamicMesh mesh;
@@ -38,21 +39,15 @@ public class MeshParticleInterface : MonoBehaviour
         bHaveParticlesMoved = true;
     }
 
-    public Particle CutParticleVertical(Particle particle)
+    public Particle CutParticle(Particle particle, Axis axis)
     {
-        Tuple<int, List<int>> cutConnections = mesh.CutVertexVertical(particle.meshIndex);
+        Tuple<int, List<int>> cutConnections = mesh.CutVertexPair(particle.meshIndex, axis);
         int replacementVertexIndex = cutConnections.Item1;
         
         Particle newParticle = CreateNewParticle(mesh.verticesArr[replacementVertexIndex], replacementVertexIndex, mesh.GetVertexGridCoordinates(particle.meshIndex));
         return newParticle;
     }    
-    public Particle CutParticleHorizontal(Particle particle)
-    {
-        Tuple<int, List<int>> cutConnections = mesh.CutVertexHorizontal(particle.meshIndex);
-        int replacementVertexIndex = cutConnections.Item1;
-        Particle newParticle = CreateNewParticle(mesh.verticesArr[replacementVertexIndex], replacementVertexIndex, mesh.GetVertexGridCoordinates(particle.meshIndex));
-        return newParticle;
-    }
+
 
 
     public void SnapMeshIntoParticlePositions()

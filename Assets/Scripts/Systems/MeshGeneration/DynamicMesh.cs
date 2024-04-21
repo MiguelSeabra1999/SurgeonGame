@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Libraries;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -139,17 +140,13 @@ public abstract class DynamicMesh : MonoBehaviour
         return 0;
     }
 
-    public Tuple<int,List<int>> CutVertexVertical(int inVertexIndex)
+    public Tuple<int,List<int>> CutVertexPair(int inVertexIndex, Axis axis)
     {
-        CutVertex(inVertexIndex + halfCoreSize, true);
-        return CutVertex(inVertexIndex, true);
+        CutVertex(inVertexIndex + halfCoreSize, axis == Axis.Vertical);
+        return CutVertex(inVertexIndex, axis == Axis.Vertical);
     }
     
-    public Tuple<int,List<int>> CutVertexHorizontal(int inVertexIndex)
-    {
-        CutVertex(inVertexIndex + halfCoreSize, false);
-        return CutVertex(inVertexIndex, false);
-    }
+
 
     private Tuple<int,List<int>> CutVertex(int inVertexIndex, bool bIsVertical)
     {

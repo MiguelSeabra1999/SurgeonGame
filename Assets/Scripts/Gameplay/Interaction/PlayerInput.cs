@@ -33,7 +33,7 @@ namespace Gameplay.Interaction
         void Start()
         {
             _physicsSimulator = GameManager.Instance.physicsSimulator;
-            _hitResult =  new(-1, Vector3.zero);
+            _hitResult =  new(-1, Vector3.zero, Vector3.zero);
         }
 
         void Update()
@@ -60,8 +60,12 @@ namespace Gameplay.Interaction
 
         private void UpdateInput( Ray ray)
         {
+            if (_hitResult.bHit)
+                _hoveredBuffer.Add(_hitResult.mousePointInParticlePlane);
+            
             if (Input.GetKey(KeyCode.Mouse1))
             {
+                
                 if (_hitResult.bHit == false)
                     return;
                 ContextAction();
@@ -73,7 +77,7 @@ namespace Gameplay.Interaction
                 {
                     if (_hitResult.bHit == false)
                         return;
-                    Debug.Log("Mouse Down");
+                   // Debug.Log("Mouse Down");
                     MouseDown();
                 }
                 else
@@ -83,7 +87,7 @@ namespace Gameplay.Interaction
             }
             else if (_bIsMouseDown)
             {
-                Debug.Log("Mouse Up");
+               // Debug.Log("Mouse Up");
                 MouseUp();
             }
         }
@@ -91,14 +95,14 @@ namespace Gameplay.Interaction
         void ContextAction() 
         {
             
-            _hoveredBuffer.Add(_hitResult.hitPoint);
+
             onContextAction.Invoke(_hitResult.particleIndex, _hoveredBuffer);
         }
         void MouseDrag( Ray ray)
         {
             Particle particle = _physicsSimulator.GetParticle(_grabbedParticle);
-            Vector3 mousePoint = MathFunctions.RayHorizontalPlaneIntersection(ray.origin, ray.direction, particle.position.y);
-            Vector3 newPosition =  mousePoint + _mousePositionOffset;
+            Vector3 mousePointInParticlePlane = MathFunctions.RayHorizontalPlaneIntersection(ray.origin, ray.direction, particle.position.y);
+            Vector3 newPosition =  mousePointInParticlePlane + _mousePositionOffset;
             
             Vector3 clampedPosition = new Vector3(newPosition.x, particle.position.y,newPosition.z);
             _physicsSimulator.SetParticlePosition(_grabbedParticle, clampedPosition);

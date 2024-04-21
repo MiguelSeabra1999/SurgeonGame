@@ -14,12 +14,14 @@ namespace Systems.Physics
         public bool bHit;
         public int particleIndex;
         public Vector3 hitPoint;
+        public Vector3 mousePointInParticlePlane;
 
-        public RayCastResult(int particleIndex,Vector3 hitPoint)
+        public RayCastResult(int particleIndex,Vector3 hitPoint, Vector3 mousePointInParticlePlane)
         {
             bHit = particleIndex >= 0;
             this.particleIndex = particleIndex;
             this.hitPoint = hitPoint;
+            this.mousePointInParticlePlane = mousePointInParticlePlane;
         }
 
     }
@@ -107,6 +109,7 @@ namespace Systems.Physics
             direction = direction.normalized;
             float minDistance = float.MaxValue;
             int particleIndex = -1;
+
             foreach (Particle particle in _particles.Values)
             {
                 float distance = MathFunctions.RaySphereIntersection(origin, direction, particle.position, particleRadius);
@@ -120,7 +123,12 @@ namespace Systems.Physics
                 }
             }
 
-            return new(particleIndex, origin + direction * minDistance);
+            Vector3 mousePointInParticlePlane = Vector3.zero;
+            if (particleIndex != -1)
+            {
+                mousePointInParticlePlane = MathFunctions.RayHorizontalPlaneIntersection(origin, direction, GetParticle(particleIndex).position.y);
+            }
+            return new(particleIndex, origin + direction * minDistance, mousePointInParticlePlane);
         }
         
         private void OnGrabbed(int particleIndex)
@@ -150,54 +158,27 @@ namespace Systems.Physics
         void OnCut(int particleIndex, List<Vector3> mouseMovementBuffer)
         {
             Particle particle = _particles[particleIndex];
-            if(particle.bWasCut) //TODO allow for multiple cutting
+            if(particle.WasCut()) //TODO allow for multiple cutting
                 return;
-            if(mouseMovementBuffer.Count < 2)
-                return;
-
-            Vector3 movement = Vector3.zero;
-            Vector3 lastPosition = mouseMovementBuffer[mouseMovementBuffer.Count - 1];
-            for(int i = mouseMovementBuffer.Count - 2; i >= 0; i--)
-            {
-                Vector3 currentPosition = mouseMovementBuffer[i];
-                Vector3 offset = lastPosition - currentPosition;
-                if (offset.magnitude >= minDragDistanceToCut)
-                {
-                    movement = offset;
-                    break;
-                }
-            }
-        
+            
+            Vector3 movement = MathFunctions.DeterminePredominantDirection(mouseMovementBuffer, minDragDistanceToCut);
             if(movement.magnitude == 0)
                 return;
+            
+            Vector3 lastPosition = mouseMovementBuffer[mouseMovementBuffer.Count - 1];
             Debug.DrawLine(lastPosition, lastPosition - movement, Color.red, 5f);
         
             onParticleCut.Invoke(particle,movement);
         
-            float angleWithForward =  Vector3.Angle(Vector3.forward, movement);        
-            float angleWithBack = Vector3.Angle(Vector3.back, movement);
-        
-            particle.bWasCut = true;
-            if (angleWithBack < 45 || angleWithForward < 45)
+            Axis cutAxis = MathFunctions.DeterminePredominantAxis(movement);
+
+            Debug.Log(particle.meshIndex + " cut " + GridFunctions.AxisToString(cutAxis) + " " + movement.normalized);
+     
+            if(_particlesToMeshInterface.ContainsKey(particle))
             {
-                Debug.Log(particle.meshIndex + " cut vertically " + movement.normalized);
-                
-                if(_particlesToMeshInterface.ContainsKey(particle))
-                {
-                    Particle newParticle = _particlesToMeshInterface[particle].CutParticleVertical(particle);
-                    CutParticleVertical(particle,newParticle);
-                }
+                Particle newParticle = _particlesToMeshInterface[particle].CutParticle(particle, cutAxis);
+                CutParticle(particle,newParticle, cutAxis);
             }
-            else
-            {
-                Debug.Log(particle.meshIndex + " cut horizontally " + movement.normalized);
-                if(_particlesToMeshInterface.ContainsKey(particle))
-                {
-                    Particle newParticle = _particlesToMeshInterface[particle].CutParticleHorizontal(particle);
-                    CutParticleHorizontal(particle,newParticle);
-                }
-            }
-            
         }
 
 
@@ -234,8 +215,8 @@ namespace Systems.Physics
             _particlesConstraints[distanceConstraint.particleA].Add(_distanceConstraints.Count - 1);
             _particlesConstraints[distanceConstraint.particleB].Add(_distanceConstraints.Count - 1);
         }
-    
-        void MakeDistanceConstraints(Particle mainParticle, Particle secondParticle)
+
+        private void MakeDistanceConstraints(Particle mainParticle, Particle secondParticle)
         {
             float distance = Vector3.Distance(mainParticle.position,secondParticle.position);
             DistanceConstraint distanceConstraint = new(mainParticle,secondParticle, distance);
@@ -258,89 +239,58 @@ namespace Systems.Physics
         }
 
 
-        public void CutParticleVertical(Particle cutParticle, Particle replacementParticle)
+        public void CutParticle(Particle cutParticle, Particle replacementParticle, Axis axis)
         {
-            UpdateVerticalDistanceConstraints(cutParticle, replacementParticle);
-            UpdateDiagonalDistanceConstraintsVertical(cutParticle, replacementParticle);
+            cutParticle.UpdateCutDirections(axis);
+            replacementParticle.UpdateCutDirections(axis);
+            
+            UpdateAxisDistanceConstraints(cutParticle, replacementParticle, axis);
+            UpdateDiagonalDistanceConstraints(cutParticle, replacementParticle, axis);
         }    
-    
-        public void CutParticleHorizontal(Particle cutParticle, Particle replacementParticle)
-        {
-            replacementParticle.bWasCut = true;
-            UpdateHorizontalDistanceConstraints(cutParticle, replacementParticle);
-            UpdateDiagonalDistanceConstraintsHorizontal(cutParticle, replacementParticle);
-        }
-
-        private void UpdateDiagonalDistanceConstraintsVertical(Particle cutParticle, Particle replacementParticle)
+        
+        private void UpdateDiagonalDistanceConstraints(Particle cutParticle, Particle replacementParticle, Axis axis)
         {
             Vector2Int coords = cutParticle.meshCoords;
-            Vector2Int topRight = new Vector2Int(coords.x + 1, coords.y + 1);
-            Vector2Int right = new Vector2Int(coords.x + 1, coords.y);
-            Vector2Int bottomRight = new Vector2Int(coords.x + 1 , coords.y - 1);
-            Particle topRightParticle =  _particlesGrid[topRight]; 
-            Particle rightParticle =  _particlesGrid[right];
-            Particle bottomRightParticle = _particlesGrid[bottomRight];
-        
-            Particle[] particlesToMoveConstraint = { topRightParticle, rightParticle, bottomRightParticle};
-            MigrateConstraintsToReplacementParticle(cutParticle, replacementParticle, particlesToMoveConstraint);
-        }
-    
-        private void UpdateDiagonalDistanceConstraintsHorizontal(Particle cutParticle, Particle replacementParticle)
-        {
-            Vector2Int coords = cutParticle.meshCoords;
-            Vector2Int topLeft = new Vector2Int(coords.x - 1, coords.y + 1);
-            Vector2Int top = new Vector2Int(coords.x, coords.y + 1);
-            Vector2Int topRight = new Vector2Int(coords.x + 1 , coords.y + 1);
-            Particle topLeftParticle = _particlesGrid[topLeft]; 
-            Particle topParticle = _particlesGrid[top];
-            Particle topRightParticle = _particlesGrid[topRight];
-        
-            Particle[] particlesToMoveConstraint = { topLeftParticle, topParticle, topRightParticle};
-            if (particlesToMoveConstraint == null) throw new ArgumentNullException(nameof(particlesToMoveConstraint));
-            MigrateConstraintsToReplacementParticle(cutParticle, replacementParticle, particlesToMoveConstraint);
-        }
-
-        private void MigrateConstraintsToReplacementParticle(Particle cutParticle, Particle replacementParticle,
-            Particle[] particlesToMoveConstraint)
-        {
-            foreach (Particle particle in particlesToMoveConstraint)
+            Directions axisDirection = GridFunctions.GetDirectionsFromAxis(GridFunctions.GetOtherAxis(axis))[0];
+            Directions[] directions = GridFunctions.GetComplexDirectionsFromBasic((BasicDirections)axisDirection);
+            
+            foreach(Directions complexDirection in directions)
             {
-                for (int i = 0; i < _particlesConstraints[particle].Count; i++)
-                {
-                    int distanceConstraintIndex = _particlesConstraints[particle][i];
-                    DistanceConstraint constraint = _distanceConstraints[distanceConstraintIndex];
-                
-                    if(constraint.ContainsParticle(cutParticle.meshIndex) == false)
-                        continue;
-                
-                    constraint.ReplaceParticle(cutParticle, replacementParticle);
-                    _distanceConstraints[distanceConstraintIndex] = constraint;
-                }
+                Vector2Int neighbour = GridFunctions.GetCoordNeighbour(coords, complexDirection);
+                Particle particle = _particlesGrid[neighbour];
+                MigrateConstraintsToReplacementParticle(cutParticle, replacementParticle, particle);
             }
         }
 
-        private void UpdateVerticalDistanceConstraints(Particle cutParticle, Particle replacementParticle)
+        private void MigrateConstraintsToReplacementParticle(Particle cutParticle, Particle replacementParticle,
+            Particle particle)
         {
-            Vector2Int coords = cutParticle.meshCoords;
-        
-            Vector2Int top = new Vector2Int(coords.x  , coords.y + 1);
-            Vector2Int bottom = new Vector2Int(coords.x  , coords.y - 1);
-        
-            CreateOrUpdateDistanceConstraint(cutParticle, replacementParticle, top);
-            CreateOrUpdateDistanceConstraint(cutParticle, replacementParticle, bottom);
-        }    
-    
-        private void UpdateHorizontalDistanceConstraints(Particle cutParticle, Particle replacementParticle)
-        {
-            Vector2Int coords = cutParticle.meshCoords;
-        
-            Vector2Int left = new Vector2Int(coords.x - 1  , coords.y );
-            Vector2Int right = new Vector2Int(coords.x + 1 , coords.y );
-        
-            CreateOrUpdateDistanceConstraint(cutParticle, replacementParticle, left);
-            CreateOrUpdateDistanceConstraint(cutParticle, replacementParticle, right);
+
+            for (int i = 0; i < _particlesConstraints[particle].Count; i++)
+            {
+                int distanceConstraintIndex = _particlesConstraints[particle][i];
+                DistanceConstraint constraint = _distanceConstraints[distanceConstraintIndex];
+            
+                if(constraint.ContainsParticle(cutParticle.meshIndex) == false)
+                    continue;
+            
+                constraint.ReplaceParticle(cutParticle, replacementParticle);
+                _distanceConstraints[distanceConstraintIndex] = constraint;
+            }
+            
         }
 
+        private void UpdateAxisDistanceConstraints(Particle cutParticle, Particle replacementParticle, Axis axis)
+        {
+            Vector2Int coords = cutParticle.meshCoords;
+            foreach(Directions direction in GridFunctions.GetDirectionsFromAxis(axis))
+            {
+                Vector2Int neighbour = GridFunctions.GetCoordNeighbour(coords, direction);
+                CreateOrUpdateDistanceConstraint(cutParticle, replacementParticle, neighbour);
+            }
+        
+        }   
+        
         private void CreateOrUpdateDistanceConstraint(Particle cutParticle, Particle replacementParticle,
             Vector2Int otherParticleCoords)
         {

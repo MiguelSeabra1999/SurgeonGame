@@ -1,48 +1,63 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
+using Libraries;
 using UnityEngine;
-using UnityEngine.Events;
-/*
+
+namespace Systems.Physics
+{
+    /*
 [RequireComponent(typeof(SphereCollider))]
 [RequireComponent(typeof(Draggable))]
 */
 
-public class Particle
-{
-    public Vector3 position;
-    public int meshIndex;
-    public Vector2Int meshCoords;
-    public bool isLocked;
-    public bool bWasCut;    
 
-    public Particle(Vector3 position, int meshIndex,Vector2Int meshCoords)
+
+    public class Particle
     {
-        this.position = position;
-        this.meshIndex = meshIndex;
-        this.meshCoords = meshCoords;
-        isLocked = false;
-        bWasCut = false;
-    }
+        public Vector3 position;
+        public int meshIndex;
+        public Vector2Int meshCoords;
+        public bool isLocked;
+        public byte cutDirections; //collects Directions
+        
+        public Particle(Vector3 position, int meshIndex,Vector2Int meshCoords)
+        {
+            this.position = position;
+            this.meshIndex = meshIndex;
+            this.meshCoords = meshCoords;
+            isLocked = false;
+            cutDirections = 0;
+        }
     
-    public static bool operator ==(Particle a, Particle b)
-    {
-        if (ReferenceEquals(a, b))
+        public static bool operator ==(Particle a, Particle b)
         {
-            return true;
+            if (ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            return a.meshIndex == b.meshIndex;
         }
-        return a.meshIndex == b.meshIndex;
-    }
-    public static bool operator !=(Particle a, Particle b)
-    {
-        if (ReferenceEquals(a, b))
+        public static bool operator !=(Particle a, Particle b)
         {
-            return true;
+            if (ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            return a.meshIndex != b.meshIndex;
         }
-        return a.meshIndex != b.meshIndex;
-    }
 
 
+        public void UpdateCutDirections(Axis axis)
+        {
+            Directions[] axisDirections = GridFunctions.GetDirectionsFromAxis(axis);
+            foreach (Directions direction in axisDirections)
+            {
+                cutDirections |= (byte)direction;
+            }
+        }
+
+        public bool WasCut()
+        {
+            return cutDirections != 0;
+        }
+    }
 }
